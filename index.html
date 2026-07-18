@@ -122,6 +122,7 @@ const MQTT_BROKER = "wss://9ec6a439faec488a83dfca692d4b7932.s1.eu.hivemq.cloud:8
 const MQTT_USER = "WakeHubUser";
 const MQTT_PASSWORD = "23012007";
 const MQTT_TOPIC = "wakehub/wake";
+const MQTT_STATUS_TOPIC = "wakehub/status";
 const AUTH_TOKEN = "nk2uyYAA8ZcnHUweLJiFinjB99LM223UbwxtPQHnhte2jJwvBT1oAnuKgPJNYCvKQPHpTRyUvZCJFTzissUvdqCfrLLpJ3rQWzs";
 // =============================================================================
 
@@ -137,6 +138,18 @@ const client = mqtt.connect(MQTT_BROKER, {
 client.on("connect", () => {
     statusEl.textContent = "Conectado! Pronto para ligar o PC.";
     btnEl.disabled = false;
+    client.subscribe(MQTT_STATUS_TOPIC);
+});
+
+client.on("message", (topic, message) => {
+    if (topic !== MQTT_STATUS_TOPIC) return;
+
+    const status = message.toString();
+
+    if (status === "ligado")
+    {
+        statusEl.textContent = "✅ O computador ligou!";
+    }
 });
 
 client.on("error", (err) => {
@@ -152,16 +165,12 @@ client.on("close", () => {
 function ligarPC()
 {
     btnEl.disabled = true;
-    statusEl.textContent = "Enviando comando...";
+    statusEl.textContent = "Comando enviado! Aguardando o PC ligar...";
 
     client.publish(MQTT_TOPIC, AUTH_TOKEN, {}, (err) => {
         if (err)
         {
             statusEl.textContent = "Erro ao enviar: " + err.message;
-        }
-        else
-        {
-            statusEl.textContent = "Comando enviado! O PC deve ligar em instantes.";
         }
         btnEl.disabled = false;
     });
