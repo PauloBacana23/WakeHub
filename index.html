@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WakeHub</title>
+
+<!-- ===== ÍCONE =====
+     Coloque um arquivo "icon.png" (quadrado, recomendo 512x512) na mesma
+     pasta do index.html e suba junto pro GitHub Pages. -->
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a2850">
+
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +113,18 @@ button:disabled{
 button:active:not(:disabled){
     transform:translateY(0);
 }
+
+#trocarToken{
+    margin-top:16px;
+    font-size:12px;
+    color:rgba(255,255,255,.55);
+    cursor:pointer;
+    text-decoration:underline;
+}
+
+#trocarToken:hover{
+    color:rgba(255,255,255,.8);
+}
 </style>
 </head>
 <body>
@@ -114,6 +135,7 @@ button:active:not(:disabled){
 
     <div id="status">Conectando ao broker...</div>
     <button id="btnLigar" onclick="ligarPC()" disabled>Ligar Computador</button>
+    <div id="trocarToken" onclick="trocarToken()">Trocar token de acesso</div>
 </div>
 
 <script>
@@ -123,11 +145,31 @@ const MQTT_USER = "WakeHubUser";
 const MQTT_PASSWORD = "23012007";
 const MQTT_TOPIC = "wakehub/wake";
 const MQTT_STATUS_TOPIC = "wakehub/status";
-const AUTH_TOKEN = "nk2uyYAA8ZcnHUweLJiFinjB99LM223UbwxtPQHnhte2jJwvBT1oAnuKgPJNYCvKQPHpTRyUvZCJFTzissUvdqCfrLLpJ3rQWzs";
+// O token não fica mais fixo no código - é pedido na primeira vez
+// e guardado no navegador (localStorage).
 // =============================================================================
 
 const statusEl = document.getElementById("status");
 const btnEl = document.getElementById("btnLigar");
+
+function obterToken(forcarNovo = false)
+{
+    if (forcarNovo)
+    {
+        localStorage.removeItem("wakehub_token");
+    }
+
+    let token = localStorage.getItem("wakehub_token");
+    if (!token)
+    {
+        token = prompt("Digite o token de acesso do WakeHub:");
+        if (token)
+        {
+            localStorage.setItem("wakehub_token", token);
+        }
+    }
+    return token;
+}
 
 const client = mqtt.connect(MQTT_BROKER, {
     username: MQTT_USER,
@@ -150,6 +192,10 @@ client.on("message", (topic, message) => {
     {
         statusEl.textContent = "✅ O computador ligou!";
     }
+    else if (status === "sem_resposta")
+    {
+        statusEl.textContent = "⚠️ O PC não respondeu. Confira se ligou manualmente.";
+    }
 });
 
 client.on("error", (err) => {
@@ -162,12 +208,20 @@ client.on("close", () => {
     btnEl.disabled = true;
 });
 
+function trocarToken()
+{
+    obterToken(true);
+}
+
 function ligarPC()
 {
+    const token = obterToken();
+    if (!token) return;
+
     btnEl.disabled = true;
     statusEl.textContent = "Comando enviado! Aguardando o PC ligar...";
 
-    client.publish(MQTT_TOPIC, AUTH_TOKEN, {}, (err) => {
+    client.publish(MQTT_TOPIC, token, {}, (err) => {
         if (err)
         {
             statusEl.textContent = "Erro ao enviar: " + err.message;

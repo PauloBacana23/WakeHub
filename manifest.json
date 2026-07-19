@@ -1,0 +1,17 @@
+{
+  "name": "WakeHub",
+  "short_name": "WakeHub",
+  "description": "Ligue o computador de qualquer lugar do mundo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a2850",
+  "theme_color": "#0a2850",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
