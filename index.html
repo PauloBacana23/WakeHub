@@ -229,6 +229,16 @@ function ligarPC()
         btnEl.disabled = false;
     });
 }
+
+// Registra o Service Worker (necessário para a instalação completa do PWA)
+if ("serviceWorker" in navigator)
+{
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => {
+            console.log("Falha ao registrar Service Worker:", err);
+        });
+    });
+}
 </script>
 </body>
 </html>
